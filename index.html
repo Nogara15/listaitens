@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Itens</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.css">
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+        .add-button, .edit-button, .delete-button, .mark-button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
+        .edit-button {
+            background-color: #FFC107;
+        }
+        .delete-button {
+            background-color: #DC3545;
+        }
+        .mark-button {
+            background-color: #28A745;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 400px;
+        }
+        .close-button {
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 5px 10px;
+            float: right;
+        }
+        .form-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .form-group label {
+            width: 100%;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .submit-button {
+            background-color: green;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 10px 20px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .item-list {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .item {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex: 1 1 calc(25% - 20px);
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 28px;
+        }
+        .item.purchased {
+            background-color: #d4edda;
+        }
+        .item-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .item img {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+        }
+        .item-info {
+            flex: 1;
+        }
+        .item-name {
+            font-style: italic;
+        }
+        .item-value {
+            color: #289ea7;
+        }
+        .item-info p {
+            margin: 0;
+        }
+        .item a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .button-container {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">João e Juliana</div>
+
+    <button class="add-button" onclick="openModal()">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <button class="close-button" onclick="closeModal()">X</button>
+            <h2>Adicionar Item</h2>
+            <div class="form-group">
+                <label for="itemName">Nome:</label>
+                <input type="text" id="itemName" name="itemName">
+                <label for="itemValue">R$:</label>
+                <input type="text" id="itemValue" name="itemValue">
+                <label for="itemLink">Link:</label>
+                <input type="text" id="itemLink" name="itemLink">
+                <label for="itemImage">Imagem:</label>
+                <input type="file" id="itemImage" name="itemImage" accept="image/*">
+            </div>
+            <button class="submit-button" onclick="submitItem()">Criar</button>
+        </div>
+    </div>
+
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <button class="close-button" onclick="closeEditModal()">X</button>
+            <h2>Editar Item</h2>
+            <div class="form-group">
+                <label for="editItemName">Nome:</label>
+                <input type="text" id="editItemName" name="editItemName">
+                <label for="editItemValue">R$:</label>
+                <input type="text" id="editItemValue" name="editItemValue">
+                <label for="editItemLink">Link:</label>
+                <input type="text" id="editItemLink" name="editItemLink">
+                <label for="editItemImage">Imagem:</label>
+                <input type="file" id="editItemImage" name="editItemImage" accept="image/*">
+            </div>
+            <button class="submit-button" onclick="saveEdit()">Salvar</button>
+        </div>
+    </div>
+
+    <div class="item-list" id="itemList">
+        <!-- Items will be added here -->
+    </div>
+
+    <div class="button-container">
+        <button class="mark-button" onclick="markItemAsPurchased()">
+            <i class="fas fa-check"></i>
+        </button>
+        <button class="edit-button" onclick="editSelectedItem()">
+            <i class="fas fa-pencil-alt"></i>
+        </button>
+        <button class="delete-button" onclick="deleteSelectedItem()">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+    <script>
+        let selectedIndex = null;
+
+        function openModal() {
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function openEditModal(index) {
+            var items = JSON.parse(localStorage.getItem('items')) || [];
+            var item = items[index];
+
+            document.getElementById('editItemName').value = item.name;
+            document.getElementById('editItemValue').value = item.value;
+            document.getElementById('editItemLink').value = item.link;
+
+            if (item.image) {
+                document.getElementById('editItemImage').dataset.image = item.image;
+            } else {
+                document.getElementById('editItemImage').removeAttribute('data-image');
+            }
+
+            document.getElementById('editModal').style.display = 'flex';
+            document.getElementById('editModal').setAttribute('data-index', index);
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function submitItem() {
+            var itemName = document.getElementById('itemName').value;
+            var itemValue = document.getElementById('itemValue').value;
+            var itemLink = document.getElementById('itemLink').value;
+            var itemImage = document.getElementById('itemImage').files[0];
+
+            if (itemName && itemValue && itemLink) {
+                var reader = new FileReader();
+                reader.onloadend = function () {
+                    var items = JSON.parse(localStorage.getItem('items')) || [];
+                    items.push({ name: itemName, value: itemValue, link: itemLink, image: reader.result, purchased: false });
+                    localStorage.setItem('items', JSON.stringify(items));
+
+                    addItemToList(itemName, itemValue, itemLink, reader.result, items.length - 1);
+
+                    document.getElementById('itemName').value = '';
+                    document.getElementById('itemValue').value = '';
+                    document.getElementById('itemLink').value = '';
+                    document.getElementById('itemImage').value = '';
+                    closeModal();
+                }
+                if (itemImage) {
+                    reader.readAsDataURL(itemImage);
+                } else {
+                    reader.onloadend();
+                }
+            } else {
+                alert('Por favor, preencha todas as informações.');
+            }
+        }
+
+        function addItemToList(name, value, link, image, index, purchased = false) {
+            var itemList = document.getElementById('itemList');
+
+            var itemDiv = document.createElement('div');
+            itemDiv.className = 'item' + (purchased ? ' purchased' : '');
+            itemDiv.setAttribute('data-index', index);
+            itemDiv.onclick = () => selectItem(index);
+
+            var itemContent = `
+                <div class="item-content">
+                    <div class="item-info">
+                        <p class="item-name">${name}</p>
+                        <p class="item-value">R$: ${value}</p>
+                        <p><a href="${link}" target="_blank">Link</a></p>
+                    </div>
+                    <img src="${image}" alt="${name}">
+                </div>
+            `;
+            itemDiv.innerHTML = itemContent;
+            itemList.appendChild(itemDiv);
+        }
+
+        function loadItems() {
+            var items = JSON.parse(localStorage.getItem('items')) || [];
+            items.forEach((item, index) => {
+                addItemToList(item.name, item.value, item.link, item.image, index, item.purchased);
+            });
+            initSortable();
+        }
+
+        function saveEdit() {
+            var index = document.getElementById('editModal').getAttribute('data-index');
+            var items = JSON.parse(localStorage.getItem('items')) || [];
+
+            items[index].name = document.getElementById('editItemName').value;
+            items[index].value = document.getElementById('editItemValue').value;
+            items[index].link = document.getElementById('editItemLink').value;
+
+            var editImage = document.getElementById('editItemImage').files[0];
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                if (editImage) {
+                    items[index].image = reader.result;
+                } else if (document.getElementById('editItemImage').dataset.image) {
+                    items[index].image = document.getElementById('editItemImage').dataset.image;
+                } else {
+                    items[index].image = null;
+                }
+                localStorage.setItem('items', JSON.stringify(items));
+                document.getElementById('itemList').innerHTML = '';
+                loadItems();
+                closeEditModal();
+            }
+            if (editImage) {
+                reader.readAsDataURL(editImage);
+            } else {
+                reader.onloadend();
+            }
+        }
+
+        function deleteSelectedItem() {
+            if (selectedIndex !== null) {
+                var items = JSON.parse(localStorage.getItem('items')) || [];
+                items.splice(selectedIndex, 1);
+                localStorage.setItem('items', JSON.stringify(items));
+                document.getElementById('itemList').innerHTML = '';
+                loadItems();
+                selectedIndex = null;
+            } else {
+                alert('Nenhum item selecionado.');
+            }
+        }
+
+        function editSelectedItem() {
+            if (selectedIndex !== null) {
+                openEditModal(selectedIndex);
+            } else {
+                alert('Nenhum item selecionado.');
+            }
+        }
+
+        function markItemAsPurchased() {
+            if (selectedIndex !== null) {
+                var items = JSON.parse(localStorage.getItem('items')) || [];
+                items[selectedIndex].purchased = !items[selectedIndex].purchased;
+                localStorage.setItem('items', JSON.stringify(items));
+                document.getElementById('itemList').innerHTML = '';
+                loadItems();
+            } else {
+                alert('Nenhum item selecionado.');
+            }
+        }
+
+        function selectItem(index) {
+            if (selectedIndex === index) {
+                selectedIndex = null;
+                document.querySelectorAll('.item').forEach(item => item.style.border = '1px solid #ddd');
+            } else {
+                selectedIndex = index;
+                document.querySelectorAll('.item').forEach(item => item.style.border = '1px solid #ddd');
+                document.querySelector(`.item[data-index="${index}"]`).style.border = '2px solid #007BFF';
+            }
+        }
+
+        function initSortable() {
+            Sortable.create(document.getElementById('itemList'), {
+                onEnd: function (evt) {
+                    var items = JSON.parse(localStorage.getItem('items')) || [];
+                    var newItems = Array.from(document.querySelectorAll('.item')).map(item => items[item.getAttribute('data-index')]);
+                    localStorage.setItem('items', JSON.stringify(newItems));
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadItems);
+    </script>
+</body>
+</html>
